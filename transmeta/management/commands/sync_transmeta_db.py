@@ -1,11 +1,10 @@
 """
- Detect new translatable fields in all models and sync database structure
+ Detect new translatable fields in all models and sync database structure.
 
- You will need to execute this command in these two cases:
+ You will need to execute this command in two cases:
 
-   1. When you add new languages to settings.LANGUAGES
-
-   2. When you new translatable fields to your models
+   1. When you add new languages to settings.LANGUAGES.
+   2. When you new translatable fields to your models.
 
 """
 
@@ -19,36 +18,36 @@ from transmeta import get_real_fieldname
 
 
 def ask_for_default_language():
-    print 'These are configured languages:'
+    print 'Available languages:'
     for i, lang_tuple in enumerate(settings.LANGUAGES):
         print '\t%d. %s' % (i+1, lang_tuple[1])
-    print 'You must decide what language will be contains actual non translatable fields data'
+    print 'Choose a language in which to put current untranslated data.'
     while True:
-        prompt = 'What will be the destination language for data?: '
+        prompt = "What's the language of current data? (1-%s) " % len(lang_tuple)
         answer = raw_input(prompt).strip()
         if answer != '':
             try:
                 index = int(answer) - 1
                 if index < 0 or index > len(settings.LANGUAGES):
-                    print 'That is not a valid number'
+                    print "That's not a valid number"
                 else:
                     return settings.LANGUAGES[index][0]
             except ValueError:
-                print 'Please write a number'
+                print "Please write a number"
 
 
 def ask_for_confirmation(sql_sentences, model_full_name):
-    print '\nThis SQL for synchronize "%s" schema:' % model_full_name
+    print '\nSQL to synchronize "%s" schema:' % model_full_name
     for sentence in sql_sentences:
         print '   %s' % sentence
     while True:
-        prompt = '\nAre you sure that you want to execute previous SQL: (y/n) [n]: '
+        prompt = '\nAre you sure that you want to execute the previous SQL: (y/n) [n]: '
         answer = raw_input(prompt).strip()
         if answer == '':
             return False
-        elif answer not in ('y', 'n'):
+        elif answer not in ('y', 'n', 'yes', 'no'):
             print 'Please answer yes or no'
-        elif answer == 'y':
+        elif answer == 'y' or answer == 'yes':
             return True
         else:
             return False
@@ -60,7 +59,7 @@ def print_missing_langs(missing_langs, field_name, model_name):
 
 
 class Command(BaseCommand):
-    help = "Detect new translatable fields in all models and sync database structure"
+    help = "Detect new translatable fields or new available languages and sync database structure"
 
     def handle(self, *args, **options):
         """ command execution """
