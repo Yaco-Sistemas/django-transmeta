@@ -41,7 +41,10 @@ def default_value(field):
         elif getattr(self, attname(settings.LANGUAGE_CODE), None):
             result = getattr(self, attname(settings.LANGUAGE_CODE))
         else:
-            result = None
+            default_transmeta_attr = attname(
+                getattr(settings, 'TRANSMETA_DEFAULT_LANGUAGE', 'en')
+            )
+            result = getattr(self, default_transmeta_attr, None)
         return result
 
     return default_value_func
