@@ -10,7 +10,9 @@ LANGUAGE_CODE = 0
 LANGUAGE_NAME = 1
 
 
-def get_real_fieldname(field, lang):
+def get_real_fieldname(field, lang=None):
+    if lang is None:
+       lang = get_language()
     return '%s_%s' % (field, lang)
 
 
