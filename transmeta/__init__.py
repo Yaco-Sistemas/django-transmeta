@@ -13,7 +13,7 @@ LANGUAGE_NAME = 1
 def get_real_fieldname(field, lang=None):
     if lang is None:
        lang = get_language()
-    return '%s_%s' % (field, lang)
+    return str('%s_%s' % (field, lang))
 
 
 def get_real_fieldname_in_each_language(field):
