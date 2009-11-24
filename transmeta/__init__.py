@@ -26,6 +26,15 @@ def canonical_fieldname(db_field):
     return getattr(db_field, 'original_fieldname', db_field.name) # original_fieldname is set by transmeta
 
 
+def get_all_translatable_fields(model):
+    """ returns all translatable fields in a model (including superclasses ones) """
+    model_trans_fields = set(getattr(model._meta, 'translatable_fields', []))
+    for parent in model._meta.parents:
+        parent_trans_fields = getattr(parent._meta, 'translatable_fields', [])
+        model_trans_fields.update(parent_trans_fields)
+    return tuple(model_trans_fields)
+
+
 def default_value(field):
     '''
     When accessing to the name of the field itself, the value
