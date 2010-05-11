@@ -17,6 +17,10 @@ def get_real_fieldname(field, lang=None):
     return str('%s_%s' % (field, lang))
 
 
+def get_fallback_fieldname(field, lang=None):
+    return get_real_fieldname(field, lang=fallback_language())
+
+
 def get_real_fieldname_in_each_language(field):
     return [get_real_fieldname(field, lang[LANGUAGE_CODE])
             for lang in settings.LANGUAGES]
