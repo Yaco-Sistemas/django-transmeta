@@ -27,6 +27,12 @@ def canonical_fieldname(db_field):
     return getattr(db_field, 'original_fieldname', db_field.name) # original_fieldname is set by transmeta
 
 
+def fallback_language():
+    """ returns fallback language """
+    return getattr(settings, 'TRANSMETA_DEFAULT_LANGUAGE', \
+                   settings.LANGUAGE_CODE)
+
+
 def get_all_translatable_fields(model):
     """ returns all translatable fields in a model (including superclasses ones) """
     model_trans_fields = set(getattr(model._meta, 'translatable_fields', []))
@@ -50,13 +56,9 @@ def default_value(field):
             result = getattr(self, attname(get_language()))
         elif getattr(self, attname(get_language()[:2]), None):
             result = getattr(self, attname(get_language()[:2]))
-        elif getattr(self, attname(settings.LANGUAGE_CODE), None):
-            result = getattr(self, attname(settings.LANGUAGE_CODE))
         else:
-            default_transmeta_attr = attname(
-                getattr(settings, 'TRANSMETA_DEFAULT_LANGUAGE', 'en')
-            )
-            result = getattr(self, default_transmeta_attr, None)
+            default_language = fallback_language()
+            result = getattr(self, attname(default_language), None)
         return result
 
     return default_value_func
@@ -102,8 +104,7 @@ class TransMeta(models.base.ModelBase):
         if not isinstance(fields, tuple):
             raise ImproperlyConfigured("Meta's translate attribute must be a tuple")
 
-        default_language = getattr(settings, 'TRANSMETA_DEFAULT_LANGUAGE', \
-                                   settings.LANGUAGE_CODE)
+        default_language = fallback_language()
 
         for field in fields:
             if not field in attrs or \
