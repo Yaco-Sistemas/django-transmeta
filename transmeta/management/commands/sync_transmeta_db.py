@@ -13,6 +13,7 @@ from django.core.management.base import BaseCommand
 from django.core.management.color import no_style
 from django.db import connection, transaction
 from django.db.models import get_models
+from django.db.models.fields import FieldDoesNotExist
 
 from transmeta import get_real_fieldname
 
@@ -87,16 +88,17 @@ class Command(BaseCommand):
                         found_missing_fields = True
                         print_missing_langs(missing_langs, field_name, model_full_name)
                         sql_sentences = self.get_sync_sql(field_name, missing_langs, model)
-                        execute_sql = ask_for_confirmation(sql_sentences, model_full_name)
-                        if execute_sql:
-                            print 'Executing SQL...',
-                            for sentence in sql_sentences:
-                                self.cursor.execute(sentence)
-                                # commit
-                                transaction.commit()
-                            print 'Done'
-                        else:
-                            print 'SQL not executed'
+                        if sql_sentences:
+                            execute_sql = ask_for_confirmation(sql_sentences, model_full_name)
+                            if execute_sql:
+                                print 'Executing SQL...',
+                                for sentence in sql_sentences:
+                                    self.cursor.execute(sentence)
+                                    # commit
+                                    transaction.commit()
+                                print 'Done'
+                            else:
+                                print 'SQL not executed'
 
         transaction.leave_transaction_management()
 
@@ -130,7 +132,10 @@ class Command(BaseCommand):
             f = model._meta.get_field(field_name_i18n)
             if not f.null:
                 return f
-        return None
+        try:
+            return model._meta.get_field(field_name)
+        except FieldDoesNotExist:
+            return None
 
     def get_sync_sql(self, field_name, missing_langs, model):
         """ returns SQL needed for sync schema for a new translatable field """
@@ -148,18 +153,15 @@ class Command(BaseCommand):
             # column creation
             if not new_field in self.get_table_fields(db_table):
                 sql_output.append("ALTER TABLE %s ADD COLUMN %s" % (qn(db_table), ' '.join(field_sql)))
-            if lang == self.default_lang:
-                if not was_translatable_before:
-                    # data copy from old field (only for default language)
-                    sql_output.append("UPDATE %s SET %s = %s" % (qn(db_table), \
+            if lang == self.default_lang and not was_translatable_before:
+                # data copy from old field (only for default language)
+                sql_output.append("UPDATE %s SET %s = %s" % (qn(db_table), \
                                     qn(f.column), qn(field_name)))
-                else:
-                    # data copy from old field (only for default language)
-                    sql_output.append("UPDATE %s SET %s = '%s' WHERE %s is NULL" % (qn(db_table), \
-                                    qn(f.column), qn(VALUE_DEFAULT), \
-                                    qn(f.column)))
-
-            if default_f and not default_f.null and lang == self.default_lang:
+            elif default_f and not default_f.null and lang == self.default_lang:
+                # data copy from old field (only for default language)
+                sql_output.append("UPDATE %s SET %s = '%s' WHERE %s is NULL" % (qn(db_table), \
+                                 qn(f.column), qn(VALUE_DEFAULT), \
+                                 qn(f.column)))
                 # changing to NOT NULL after having data copied
                 sql_output.append("ALTER TABLE %s ALTER COLUMN %s SET %s" % \
                                   (qn(db_table), qn(f.column), \
