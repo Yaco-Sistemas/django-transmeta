@@ -157,11 +157,20 @@ class Command(BaseCommand):
                 # data copy from old field (only for default language)
                 sql_output.append("UPDATE %s SET %s = %s" % (qn(db_table), \
                                     qn(f.column), qn(field_name)))
+                if not f.null:
+                    # changing to NOT NULL after having data copied
+                    sql_output.append("ALTER TABLE %s ALTER COLUMN %s SET %s" % \
+                                    (qn(db_table), qn(f.column), \
+                                    style.SQL_KEYWORD('NOT NULL')))
             elif default_f and not default_f.null and lang == self.default_lang:
                 # data copy from old field (only for default language)
-                sql_output.append("UPDATE %s SET %s = '%s' WHERE %s is NULL" % (qn(db_table), \
-                                 qn(f.column), qn(VALUE_DEFAULT), \
-                                 qn(f.column)))
+                sql_output.append("UPDATE %(db_table)s SET %(f_colum)s = '%(value_default)s'\
+                                  WHERE %(f_colum)s is %(null)s or %(f_colum)s = '' " %  \
+                                    {'db_table': qn(db_table),
+                                     'f_colum': qn(f.column),
+                                     'value_default': qn(VALUE_DEFAULT),
+                                     'null': style.SQL_KEYWORD('NULL'),
+                                    })
                 # changing to NOT NULL after having data copied
                 sql_output.append("ALTER TABLE %s ALTER COLUMN %s SET %s" % \
                                   (qn(db_table), qn(f.column), \
