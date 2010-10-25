@@ -172,11 +172,11 @@ class Command(BaseCommand):
                                      'null': style.SQL_KEYWORD('NULL'),
                                     })
                 # changing to NOT NULL after having data copied
-                sql_output.append("ALTER TABLE %s ALTER COLUMN %s SET %s" % \
-                                  (qn(db_table), qn(f.column), \
-                                  style.SQL_KEYWORD('NOT NULL')))
                 sql_output.append("ALTER TABLE %s ALTER COLUMN %s DROP %s" % \
                                   (qn(db_table), qn(default_f.column), \
+                                  style.SQL_KEYWORD('NOT NULL')))
+                sql_output.append("ALTER TABLE %s ALTER COLUMN %s SET %s" % \
+                                  (qn(db_table), qn(f.column), \
                                   style.SQL_KEYWORD('NOT NULL')))
 
         if not was_translatable_before:
