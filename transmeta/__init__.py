@@ -17,6 +17,11 @@ def get_real_fieldname(field, lang=None):
     return str('%s_%s' % (field, lang))
 
 
+def get_field_language(real_field):
+    """ return language for a field. i.e. returns "en" for "name_en" """
+    return real_field.split('_')[1]
+
+
 def get_fallback_fieldname(field, lang=None):
     return get_real_fieldname(field, lang=fallback_language())
 
@@ -74,7 +79,7 @@ class TransMeta(models.base.ModelBase):
     every language. The syntax to us it is next:
 
         class MyClass(models.Model):
-            __metaclass__ transmeta.TransMeta
+            __metaclass__ = transmeta.TransMeta
 
             my_field = models.CharField(max_length=20)
             my_i18n_field = models.CharField(max_length=30)
