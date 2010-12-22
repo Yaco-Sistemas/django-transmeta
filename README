@@ -1,0 +1,186 @@
+Introduction
+============
+
+Transmeta is an application for translatable content in Django's models. Each
+language is stored and managed automatically in a different column at database
+level.
+
+Features
+========
+
+* Automatic schema creation with translatable fields. 
+* Translatable fields integrated into Django's admin interface.
+* Command to synchronize database schema to add new translatable fields and new languages.
+
+Using transmeta
+===============
+
+Creating translatable models
+----------------------------
+
+Look at this model::
+
+    class Book(models.Model):
+        title = models.CharField(max_length=200)
+        description = models.TextField()
+        body = models.TextField(default='')
+        price = models.FloatField()
+
+Suppose you want to make ``description`` and ``body`` translatable. The resulting model after using ``transmeta`` is::
+
+
+    from transmeta import TransMeta
+
+    class Book(models.Model):
+        __metaclass__ = TransMeta
+
+        title = models.CharField(max_length=200)
+        description = models.TextField()
+        body = models.TextField(default='')
+        price = models.FloatField()
+
+        class Meta:
+            translate = ('description', 'body', )
+
+Make sure you have set the default and available languages in your ``settings.py``::
+
+    LANGUAGE_CODE = 'es'
+
+    ugettext = lambda s: s # dummy ugettext function, as django's docs say
+
+    LANGUAGES = (
+        ('es', ugettext('Español')),
+        ('en', ugettext('English')),
+    )
+
+This is the SQL generated with the ``./manage.py sqlall`` command::
+
+    BEGIN;
+    CREATE TABLE "fooapp_book" (
+        "id" serial NOT NULL PRIMARY KEY,
+        "title" varchar(200) NOT NULL,
+        "description_en" text,
+        "description_es" text NOT NULL,
+        "body_es" text NOT NULL,
+        "body_en" text NOT NULL,
+        "price" double precision NOT NULL
+    )
+    ;
+    COMMIT;
+
+Notes:
+* ``transmeta`` creates one column for each language. Don't worry about needing new languages in the future, ``transmeta`` solves this problem for you.
+* If one field is ``null=False`` and doesn't have a default value, ``transmeta`` will create only one ``NOT NULL`` field, for the default language. Fields for other secondary languages will be nullable. Also, the primary language will be required in the admin app, while the other fields will be optional (with ``blank=True``). This was done so because the normal approach for content translation is first add content in the main language and later have translators translate into other languages.
+* You can use ``./manage.py syncdb`` to create database schema.
+
+Playing in the python shell
+---------------------------
+
+``transmeta`` creates one field for every available language for every translatable field defined in a model. Field names are suffixed with language short codes, e.g.: ``description_es``, ``description_en``, and so on. In addition it creates a ``field_name`` getter to retrieve the field value in the active language.
+
+Let's play a bit in a python shell to best understand how this works::
+
+    >>> from fooapp.models import Book
+    >>> b = Book.objects.create(description_es=u'mi descripción', description_en=u'my description')
+    >>> b.description
+    u'my description'
+    >>> from django.utils.translation import activate
+    >>> activate('es')
+    >>> b.description
+    u'mi descripción'
+    >>> b.description_en
+    u'my description'
+
+Adding new languages
+--------------------
+
+If you need to add new languages to the existing ones you only need to change your settings.py and ask transmeta to sync the DB again. For example, to add French to our project, you need to add it to LANGUAGES in ``settings.py``::
+
+    LANGUAGES = (
+        ('es', ugettext('Español')),
+        ('en', ugettext('English')),
+        ('fr', ugettext('Français')),
+    )
+
+And execute a special ``sync_transmeta_db`` command::
+
+    $ ./manage.py sync_transmeta_db
+
+    Missing languages in "description" field from "fooapp.book" model: fr
+
+    SQL to synchronize "fooapp.book" schema:
+       ALTER TABLE "fooapp_book" ADD COLUMN "description_fr" text
+
+    Are you sure that you want to execute the previous SQL: (y/n) [n]: y
+    Executing SQL... Done
+
+    Missing languages in "body" field from "fooapp.book" model: fr
+
+    SQL to synchronize "fooapp.book" schema:
+       ALTER TABLE "fooapp_book" ADD COLUMN "body_fr" text
+
+    Are you sure that you want to execute the previous SQL: (y/n) [n]: y
+    Executing SQL... Done
+
+And done!
+
+Adding new translatable fields
+------------------------------
+
+Now imagine that, after several months using this web app (with many books created), you need to make book price translatable (for example because book price depends on currency).
+
+To achieve this, first add ``price`` to the model's translatable fields list::
+
+    class Book(models.Model):
+        ...
+        price = models.FloatField()
+
+        class Meta:
+            translate = ('description', 'body', 'price', )
+
+All that's left now is calling the ``sync_transmeta_db`` command to update the DB schema::
+
+    $ ./manage.py sync_transmeta_db
+
+    Available languages:
+        1. Español
+        2. English
+    Choose a language in which to put current untranslated data.
+    What's the language of current data? (1-2): 1
+
+    Missing languages in "price" field from "fooapp.book" model: es, en
+
+    SQL to synchronize "fooapp.book" schema:
+        ALTER TABLE "fooapp_book" ADD COLUMN "price_es" double precision
+        UPDATE "fooapp_book" SET "price_es" = "price"
+        ALTER TABLE "fooapp_book" ALTER COLUMN "price_es" SET NOT NULL
+        ALTER TABLE "fooapp_book" ADD COLUMN "price_en" double precision
+        ALTER TABLE "fooapp_book" DROP COLUMN "price"
+
+    Are you sure that you want to execute the previous SQL: (y/n) [n]: y
+    Executing SQL...Done
+
+What the hell this command does?
+
+``sync_transmeta_db`` command not only creates new database columns for new translatable field... it copy data from old ``price`` field into one of languages, and that is why command ask you for destination language field for actual data.
+
+Admin integration
+-----------------
+
+``transmeta`` transparently displays all translatable fields into the admin interface. This is easy because models have in fact many fields (one for each language).
+
+Changing form fields in the admin is quite a common task, and ``transmeta`` includes the ``canonical_fieldname`` utility function to apply these changes for all language fields at once. It's better explained with an example::
+
+    from transmeta import canonical_fieldname
+
+    class BookAdmin(admin.ModelAdmin):
+        def formfield_for_dbfield(self, db_field, **kwargs):
+            field = super(BookAdmin, self).formfield_for_dbfield(db_field, **kwargs)
+            db_fieldname = canonical_fieldname(db_field)
+            if db_fieldname == 'description':
+                # this applies to all description_* fields
+                field.widget = MyCustomWidget()
+            elif field.name == 'body_es':
+                # this applies only to body_es field
+                field.widget = MyCustomWidget()
+            return field
