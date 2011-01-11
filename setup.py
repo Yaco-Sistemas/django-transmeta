@@ -22,7 +22,7 @@ def read(*rnames):
 
 setup(
     name="django-transmeta",
-    version="0.5",
+    version="0.5.1",
     author="Yaco Sistemas S.L.",
     author_email="garcia.marc@gmail.com",
     description="Transmeta is an application for translatable content in Django's models.",
@@ -37,4 +37,5 @@ setup(
     url='https://tracpub.yaco.es/djangoapps/wiki/StdFile',
     packages=find_packages('.'),
     package_dir= {'': '.'},
+    zip_safe=False,
 )
