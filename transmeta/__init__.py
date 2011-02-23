@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.datastructures import SortedDict
 from django.utils.translation import get_language
+from django.utils.functional import lazy
 
 LANGUAGE_CODE = 0
 LANGUAGE_NAME = 1
@@ -134,8 +135,8 @@ class TransMeta(models.base.ModelBase):
                         lang_attr.null = True
                     if not lang_attr.blank:
                         lang_attr.blank = True
-                if lang_attr.verbose_name:
-                    lang_attr.verbose_name = u'%s %s' % (lang_attr.verbose_name, lang_code)
+                if hasattr(lang_attr, 'verbose_name'):
+                    lang_attr.verbose_name = LazyString(lang_attr.verbose_name, lang_code)
                 attrs[lang_attr_name] = lang_attr
             del attrs[field]
             attrs[field] = property(default_value(field))
@@ -144,3 +145,14 @@ class TransMeta(models.base.ModelBase):
         if hasattr(new_class, '_meta'):
             new_class._meta.translatable_fields = fields
         return new_class
+
+
+class LazyString(object):
+
+    def __init__(self, proxy, lang):
+        self.proxy = proxy
+        self.lang = lang
+
+    def __unicode__(self):
+        return u'%s %s' % (self.proxy, self.lang)
+
