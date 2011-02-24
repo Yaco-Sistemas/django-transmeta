@@ -20,13 +20,29 @@ from setuptools import setup, find_packages
 def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
+long_description = (
+    read('README')
+    + '\n' +
+    'Authors\n'
+    '************\n'
+    + '\n' +
+    read('AUTHORS')
+    + '\n' +
+    'Change history\n'
+    '**************\n'
+    + '\n' +
+    read('CHANGES')
+    + '\n' +
+   'Download\n'
+    '********\n')
+
 setup(
     name="django-transmeta",
-    version="0.5.1",
+    version="0.6.0",
     author="Yaco Sistemas S.L.",
     author_email="garcia.marc@gmail.com",
     description="Transmeta is an application for translatable content in Django's models.",
-    long_description=(read('README')),
+    long_description=long_description,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Framework :: Django',
