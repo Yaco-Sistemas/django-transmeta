@@ -1,3 +1,9 @@
+0.6.2 (2011-03-22)
+------------------
+
+- works when default locale have spelling variants as es-ES or en-US.
+
+
 0.6.1 (2011-03-17)
 ------------------
 
