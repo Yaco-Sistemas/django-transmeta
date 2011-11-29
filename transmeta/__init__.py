@@ -12,6 +12,10 @@ LANGUAGE_CODE = 0
 LANGUAGE_NAME = 1
 
 
+def get_languages():
+    return getattr(settings, 'TRANSMETA_LANGUAGES', settings.LANGUAGES)
+
+
 def get_real_fieldname(field, lang=None):
     if lang is None:
        lang = get_language().split('-')[0] # both 'en-US' and 'en' -> 'en'
@@ -29,7 +33,7 @@ def get_fallback_fieldname(field, lang=None):
 
 def get_real_fieldname_in_each_language(field):
     return [get_real_fieldname(field, lang[LANGUAGE_CODE])
-            for lang in settings.LANGUAGES]
+            for lang in get_languages()]
 
 
 def canonical_fieldname(db_field):
@@ -126,7 +130,7 @@ class TransMeta(models.base.ModelBase):
                         "as specified in Meta's translate attribute" % \
                         dict(field=field, name=name))
             original_attr = attrs[field]
-            for lang in settings.LANGUAGES:
+            for lang in get_languages():
                 lang_code = lang[LANGUAGE_CODE]
                 lang_attr = copy.copy(original_attr)
                 lang_attr.original_fieldname = field

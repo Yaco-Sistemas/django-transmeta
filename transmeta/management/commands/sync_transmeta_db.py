@@ -15,25 +15,25 @@ from django.db import connection, transaction
 from django.db.models import get_models
 from django.db.models.fields import FieldDoesNotExist
 
-from transmeta import get_real_fieldname
+from transmeta import get_real_fieldname, get_languages
 
 VALUE_DEFAULT = 'WITHOUT VALUE'
 
 def ask_for_default_language():
     print 'Available languages:'
-    for i, lang_tuple in enumerate(settings.LANGUAGES):
+    for i, lang_tuple in enumerate(get_languages()):
         print '\t%d. %s' % (i+1, lang_tuple[1])
     print 'Choose a default language. If you have without translate the project choose the current untranslated data'
     while True:
-        prompt = "What's the default language of data? (1-%s) " % len(settings.LANGUAGES)
+        prompt = "What's the default language of data? (1-%s) " % len(get_languages())
         answer = raw_input(prompt).strip()
         if answer != '':
             try:
                 index = int(answer) - 1
-                if index < 0 or index > len(settings.LANGUAGES):
+                if index < 0 or index > len(get_languages()):
                     print "That's not a valid number"
                 else:
-                    return settings.LANGUAGES[index][0]
+                    return get_languages()[index][0]
             except ValueError:
                 print "Please write a number"
 
@@ -113,7 +113,7 @@ class Command(BaseCommand):
     def get_missing_languages(self, field_name, db_table):
         """ get only missings fields """
         db_table_fields = self.get_table_fields(db_table)
-        for lang_code, lang_name in settings.LANGUAGES:
+        for lang_code, lang_name in get_languages():
             if get_real_fieldname(field_name, lang_code) not in db_table_fields:
                 yield lang_code
 
@@ -127,7 +127,7 @@ class Command(BaseCommand):
             return True
 
     def get_default_field(self, field_name, model):
-        for lang_code, lang_name in settings.LANGUAGES:
+        for lang_code, lang_name in get_languages():
             field_name_i18n = get_real_fieldname(field_name, lang_code)
             f = model._meta.get_field(field_name_i18n)
             if not f.null:
