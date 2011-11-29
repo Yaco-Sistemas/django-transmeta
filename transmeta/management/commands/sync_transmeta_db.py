@@ -8,6 +8,8 @@
 
 """
 
+from optparse import make_option
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.management.color import no_style
@@ -19,7 +21,20 @@ from transmeta import get_real_fieldname, get_languages
 
 VALUE_DEFAULT = 'WITHOUT VALUE'
 
-def ask_for_default_language():
+def ask_for_default_language(assume_yes, language_code):
+    codes = [i[0] for i in get_languages()]
+    if language_code and language_code not in codes:
+        print 'Default language code provided "%s" is not deffined on settings.py' % language_code
+        language_code = None
+    if assume_yes and not language_code:
+        language_code = getattr(settings, 'LANGUAGE_CODE', None)
+        if not language_code in codes:
+            language_code = codes[0]
+        print 'Default language code not provided. Using %s' % language_code
+    elif language_code:
+        print 'Default language code provided. Using %s' % language_code
+    if language_code:
+        return language_code
     print 'Available languages:'
     for i, lang_tuple in enumerate(get_languages()):
         print '\t%d. %s' % (i+1, lang_tuple[1])
@@ -38,10 +53,13 @@ def ask_for_default_language():
                 print "Please write a number"
 
 
-def ask_for_confirmation(sql_sentences, model_full_name):
+def ask_for_confirmation(sql_sentences, model_full_name, assume_yes):
     print '\nSQL to synchronize "%s" schema:' % model_full_name
     for sentence in sql_sentences:
         print '   %s' % sentence
+    if assume_yes:
+        print '\nAre you sure that you want to execute the previous SQL: (y/n) [n]: YES'
+        return True
     while True:
         prompt = '\nAre you sure that you want to execute the previous SQL: (y/n) [n]: '
         answer = raw_input(prompt).strip()
@@ -63,8 +81,18 @@ def print_missing_langs(missing_langs, field_name, model_name):
 class Command(BaseCommand):
     help = "Detect new translatable fields or new available languages and sync database structure"
 
+    option_list = BaseCommand.option_list + (
+        make_option('-y', '--yes', action='store_true', dest='assume_yes',
+                    help="Assume YES on all queries"),
+        make_option('-d', '--default', dest='default_language',
+                    help="Language code of your default language"),
+        )
+
     def handle(self, *args, **options):
         """ command execution """
+        assume_yes = options.get('assume_yes', False)
+        default_language = options.get('default_language', None)
+
         # set manual transaction management
         transaction.commit_unless_managed()
         transaction.enter_transaction_management()
@@ -73,7 +101,7 @@ class Command(BaseCommand):
         self.cursor = connection.cursor()
         self.introspection = connection.introspection
 
-        self.default_lang = ask_for_default_language()
+        self.default_lang = ask_for_default_language(assume_yes, default_language)
 
         all_models = get_models()
         found_missing_fields = False
@@ -89,7 +117,7 @@ class Command(BaseCommand):
                         print_missing_langs(missing_langs, field_name, model_full_name)
                         sql_sentences = self.get_sync_sql(field_name, missing_langs, model)
                         if sql_sentences:
-                            execute_sql = ask_for_confirmation(sql_sentences, model_full_name)
+                            execute_sql = ask_for_confirmation(sql_sentences, model_full_name, assume_yes)
                             if execute_sql:
                                 print 'Executing SQL...',
                                 for sentence in sql_sentences:

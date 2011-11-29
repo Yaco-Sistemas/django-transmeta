@@ -2,6 +2,7 @@
 ------------------
 
 - Allow to use a TRANSMETA_LANGUAGES settings.
+- Added two options to sync_transmeta_db: -y (assume yes on all) and -d (default language code)
 
 
 0.6.2 (2011-03-22)
