@@ -38,7 +38,7 @@ long_description = (
 
 setup(
     name="django-transmeta",
-    version="0.6.2",
+    version="0.6.3",
     author="Yaco Sistemas S.L.",
     author_email="garcia.marc@gmail.com",
     description="Transmeta is an application for translatable content in Django's models.",
@@ -49,8 +49,8 @@ setup(
         'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
     ],
     license="LGPL 3",
-    keywords="django stdfiles filefields files",
-    url='https://tracpub.yaco.es/djangoapps/wiki/StdFile',
+    keywords="django translation internationalization i18n transmeta",
+    url='http://code.google.com/p/django-transmeta/',
     packages=find_packages('.'),
     package_dir= {'': '.'},
     zip_safe=False,
