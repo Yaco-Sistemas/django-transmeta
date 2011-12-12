@@ -49,7 +49,7 @@ setup(
         'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
     ],
     license="LGPL 3",
-    keywords="django translation internationalization i18n transmeta",
+    keywords="django,translation,internationalization,i18n,transmeta,models,translation models",
     url='http://code.google.com/p/django-transmeta/',
     packages=find_packages('.'),
     package_dir= {'': '.'},
