@@ -47,14 +47,14 @@ def fallback_language():
                    settings.LANGUAGE_CODE)
 
 
-def get_all_translatable_fields(model, model_trans_fields=None):
+def get_all_translatable_fields(model, model_trans_fields=None, column_in_current_table=False):
     """ returns all translatable fields in a model (including superclasses ones) """
     if model_trans_fields is None:
         model_trans_fields = set()
     model_trans_fields.update(set(getattr(model._meta, 'translatable_fields', [])))
     for parent in model.__bases__:
-        if getattr(parent, '_meta', None):
-            get_all_translatable_fields(parent, model_trans_fields)
+        if getattr(parent, '_meta', None) and (not column_in_current_table or parent._meta.abstract):
+            get_all_translatable_fields(parent, model_trans_fields, column_in_current_table)
     return tuple(model_trans_fields)
 
 

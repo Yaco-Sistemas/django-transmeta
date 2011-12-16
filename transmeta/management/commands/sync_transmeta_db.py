@@ -17,7 +17,7 @@ from django.db import connection, transaction
 from django.db.models import get_models
 from django.db.models.fields import FieldDoesNotExist
 
-from transmeta import get_real_fieldname, get_languages
+from transmeta import get_real_fieldname, get_languages, get_all_translatable_fields
 
 VALUE_DEFAULT = 'WITHOUT VALUE'
 
@@ -108,7 +108,7 @@ class Command(BaseCommand):
         for model in all_models:
             if hasattr(model._meta, 'translatable_fields'):
                 model_full_name = '%s.%s' % (model._meta.app_label, model._meta.module_name)
-                translatable_fields = model._meta.translatable_fields
+                translatable_fields = get_all_translatable_fields(model, column_in_current_table=True)
                 db_table = model._meta.db_table
                 for field_name in translatable_fields:
                     missing_langs = list(set(list(self.get_missing_languages(field_name, db_table)) + [self.default_lang]))
