@@ -207,10 +207,12 @@ class Command(BaseCommand):
                 sql_output.append("ALTER TABLE %s ADD COLUMN %s" % (qn(db_table), ' '.join(field_sql)))
 
             alter_colum_set = 'ALTER COLUMN %s SET' % qn(f.column)
-            alter_colum_drop = 'ALTER COLUMN %s DROP' % qn(f.column)
+            if default_f:
+                alter_colum_drop = 'ALTER COLUMN %s DROP' % qn(default_f.column)
             if 'mysql' in backend.__name__:
                 alter_colum_set = 'MODIFY %s %s' % (qn(f.column), col_type)
-                alter_colum_drop = alter_colum_set
+                if default_f:
+                    alter_colum_drop = 'MODIFY %s %s' % (qn(default_f.column), col_type)
 
             if lang == self.default_lang and not was_translatable_before:
                 # data copy from old field (only for default language)
@@ -232,15 +234,15 @@ class Command(BaseCommand):
                                      'value_default': qn(self.get_value_default()),
                                      'null': style.SQL_KEYWORD('NULL'),
                                     }))
-                # changing to NOT NULL after having data copied
-                sql_output.append("ALTER TABLE %s %s %s" % \
-                                  (qn(db_table), alter_colum_set, \
-                                  style.SQL_KEYWORD('NOT NULL')))
                 not_null = style.SQL_KEYWORD('NOT NULL')
                 if 'mysql' in backend.__name__:
                     not_null = style.SQL_KEYWORD('NULL')
                 sql_output.append(("ALTER TABLE %s %s %s" % 
                                   (qn(db_table), alter_colum_drop, not_null)))
+                # changing to NOT NULL after having data copied
+                sql_output.append("ALTER TABLE %s %s %s" % \
+                                  (qn(db_table), alter_colum_set, \
+                                  style.SQL_KEYWORD('NOT NULL')))
 
         if not was_translatable_before:
             # we drop field only if field was no translatable before
