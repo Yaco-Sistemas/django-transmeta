@@ -14,6 +14,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.core.management.color import no_style
 from django.db import connection, transaction
+from django.db import backend
 from django.db.models import get_models
 from django.db.models.fields import FieldDoesNotExist
 
@@ -129,6 +130,8 @@ class Command(BaseCommand):
                             else:
                                 print 'SQL not executed'
 
+        if transaction.is_dirty():
+            transaction.commit()
         transaction.leave_transaction_management()
 
         if not found_missing_fields:
@@ -194,19 +197,29 @@ class Command(BaseCommand):
         for lang in missing_langs:
             new_field = get_real_fieldname(field_name, lang)
             f = model._meta.get_field(new_field)
-            col_type = f.db_type()
+            try:
+                col_type = f.db_type(connection)
+            except TypeError:  # old django
+                col_type = f.db_type()
             field_sql = [style.SQL_FIELD(qn(f.column)), style.SQL_COLTYPE(col_type)]
             # column creation
             if not new_field in self.get_table_fields(db_table):
                 sql_output.append("ALTER TABLE %s ADD COLUMN %s" % (qn(db_table), ' '.join(field_sql)))
+
+            alter_colum_set = 'ALTER COLUMN %s SET' % qn(f.column)
+            alter_colum_drop = 'ALTER COLUMN %s DROP' % qn(f.column)
+            if 'mysql' in backend.__name__:
+                alter_colum_set = 'MODIFY %s %s' % (qn(f.column), col_type)
+                alter_colum_drop = alter_colum_set
+
             if lang == self.default_lang and not was_translatable_before:
                 # data copy from old field (only for default language)
                 sql_output.append("UPDATE %s SET %s = %s" % (qn(db_table), \
                                     qn(f.column), qn(field_name)))
                 if not f.null:
                     # changing to NOT NULL after having data copied
-                    sql_output.append("ALTER TABLE %s ALTER COLUMN %s SET %s" % \
-                                    (qn(db_table), qn(f.column), \
+                    sql_output.append("ALTER TABLE %s %s %s" % \
+                                    (qn(db_table), alter_colum_set, \
                                     style.SQL_KEYWORD('NOT NULL')))
             elif default_f and not default_f.null and lang == self.default_lang:
                 if default_f.name == new_field and self.get_field_required_in_db(db_table, default_f.name):
@@ -220,12 +233,14 @@ class Command(BaseCommand):
                                      'null': style.SQL_KEYWORD('NULL'),
                                     }))
                 # changing to NOT NULL after having data copied
-                sql_output.append("ALTER TABLE %s ALTER COLUMN %s DROP %s" % \
-                                  (qn(db_table), qn(default_f.column), \
+                sql_output.append("ALTER TABLE %s %s %s" % \
+                                  (qn(db_table), alter_colum_set, \
                                   style.SQL_KEYWORD('NOT NULL')))
-                sql_output.append("ALTER TABLE %s ALTER COLUMN %s SET %s" % \
-                                  (qn(db_table), qn(f.column), \
-                                  style.SQL_KEYWORD('NOT NULL')))
+                not_null = style.SQL_KEYWORD('NOT NULL')
+                if 'mysql' in backend.__name__:
+                    not_null = style.SQL_KEYWORD('NULL')
+                sql_output.append(("ALTER TABLE %s %s %s" % 
+                                  (qn(db_table), alter_colum_drop, not_null)))
 
         if not was_translatable_before:
             # we drop field only if field was no translatable before
