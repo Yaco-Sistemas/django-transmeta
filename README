@@ -53,7 +53,7 @@ Make sure you have set the default and available languages in your ``settings.py
         ('en', ugettext('English')),
     )
 
-Notes::
+Notes:
 
 * It's possible that you want have a default language in your site, but this is not the default language to transmeta. You can set this variable in your settings::
 
@@ -171,7 +171,12 @@ All that's left now is calling the ``sync_transmeta_db`` command to update the D
 
 What the hell this command does?
 
-``sync_transmeta_db`` command not only creates new database columns for new translatable field... it copy data from old ``price`` field into one of languages, and that is why command ask you for destination language field for actual data.
+``sync_transmeta_db`` command not only creates new database columns for new translatable field... it copy data from old ``price`` field into one of languages, and that is why command ask you for destination language field for actual data. It's very important that the LANGUAGE_CODE and LANGUAGES (or TRANSMETA_DEFAULT_LANGUAGE, TRANSMETA_LANGUAGES) settings have good values.  
+
+This command also you can execute, when you want add a language to the site, or you want to change the default language in ``transmeta``. For this last case, you can define a variable in the settings file::
+
+    TRANSMETA_VALUE_DEFAULT = '---'
+
 
 Admin integration
 -----------------
