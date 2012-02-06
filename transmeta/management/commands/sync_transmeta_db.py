@@ -134,7 +134,7 @@ class Command(BaseCommand):
             if get_real_fieldname(field_name, lang_code) not in db_table_fields:
                 yield lang_code
         for db_table_field in db_table_fields:
-            pattern = re.compile('^%s_(?P<lang>\w{2})(:?\-(?P<country>\w{2}))?$' % field_name)
+            pattern = re.compile('^%s_(?P<lang>\w{2})$' % field_name)
             m = pattern.match(db_table_field)
             if not m:
                 continue
@@ -182,8 +182,6 @@ class Command(BaseCommand):
         was_translatable_before = self.was_translatable_before(field_name, db_table_fields)
         default_f = self.get_default_field(field_name, model)
         default_f_required = default_f and self.get_field_required_in_db(db_table, default_f.name)
-        #if model == :
-            #import ipdb; ipdb.set_trace()
         for lang in db_change_langs:
             new_field = get_real_fieldname(field_name, lang)
             try:
