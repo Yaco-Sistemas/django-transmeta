@@ -53,6 +53,20 @@ Make sure you have set the default and available languages in your ``settings.py
         ('en', ugettext('English')),
     )
 
+Notes::
+
+* It's possible that you want have a default language in your site, but this is not the default language to transmeta. You can set this variable in your settings::
+
+    TRANSMETA_DEFAULT_LANGUAGE = 'it'
+
+* The same it's possible with the languages::
+
+    TRANSMETA_LANGUAGES = (
+        ('es', ugettext('Spanish')),
+        ('en', ugettext('English')),
+        ('en', ugettext('Italian')),
+    )
+
 This is the SQL generated with the ``./manage.py sqlall`` command::
 
     BEGIN;
@@ -69,6 +83,7 @@ This is the SQL generated with the ``./manage.py sqlall`` command::
     COMMIT;
 
 Notes:
+
 * ``transmeta`` creates one column for each language. Don't worry about needing new languages in the future, ``transmeta`` solves this problem for you.
 * If one field is ``null=False`` and doesn't have a default value, ``transmeta`` will create only one ``NOT NULL`` field, for the default language. Fields for other secondary languages will be nullable. Also, the primary language will be required in the admin app, while the other fields will be optional (with ``blank=True``). This was done so because the normal approach for content translation is first add content in the main language and later have translators translate into other languages.
 * You can use ``./manage.py syncdb`` to create database schema.
@@ -106,7 +121,7 @@ And execute a special ``sync_transmeta_db`` command::
 
     $ ./manage.py sync_transmeta_db
 
-    Missing languages in "description" field from "fooapp.book" model: fr
+    This languages can change in "description" field from "fooapp.book" model: fr
 
     SQL to synchronize "fooapp.book" schema:
        ALTER TABLE "fooapp_book" ADD COLUMN "description_fr" text
@@ -114,7 +129,7 @@ And execute a special ``sync_transmeta_db`` command::
     Are you sure that you want to execute the previous SQL: (y/n) [n]: y
     Executing SQL... Done
 
-    Missing languages in "body" field from "fooapp.book" model: fr
+    This languages can change in "body" field from "fooapp.book" model: fr
 
     SQL to synchronize "fooapp.book" schema:
        ALTER TABLE "fooapp_book" ADD COLUMN "body_fr" text
@@ -142,13 +157,7 @@ All that's left now is calling the ``sync_transmeta_db`` command to update the D
 
     $ ./manage.py sync_transmeta_db
 
-    Available languages:
-        1. Spanish
-        2. English
-    Choose a language in which to put current untranslated data.
-    What's the language of current data? (1-2): 1
-
-    Missing languages in "price" field from "fooapp.book" model: es, en
+    This languages can change in "price" field from "fooapp.book" model: es, en
 
     SQL to synchronize "fooapp.book" schema:
         ALTER TABLE "fooapp_book" ADD COLUMN "price_es" double precision
