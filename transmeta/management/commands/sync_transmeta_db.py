@@ -46,7 +46,7 @@ def ask_for_confirmation(sql_sentences, model_full_name, assume_yes):
 
 
 def print_db_change_langs(db_change_langs, field_name, model_name):
-    print '\nMissing languages in "%s" field from "%s" model: %s' % \
+    print '\nThis languages can change in "%s" field from "%s" model: %s' % \
         (field_name, model_name, ", ".join(db_change_langs))
 
 
@@ -121,11 +121,14 @@ class Command(BaseCommand):
         db_table_desc = self.introspection.get_table_description(self.cursor, db_table)
         return [t[0] for t in db_table_desc]
 
-    def get_field_required_in_db(self, db_table, field_name):
+    def get_field_required_in_db(self, db_table, field_name, value_not_implemented=False):
         table_fields = self.introspection.get_table_description(self.cursor, db_table)
         for f in table_fields:
             if f[0] == field_name:
-                return f[-1] is False
+                is_null = f[-1]
+                if is_null is None:  # Not Implemented
+                    return value_not_implemented
+                return not is_null
         return False
 
     def get_db_change_languages(self, field_name, db_table_fields):
@@ -181,7 +184,9 @@ class Command(BaseCommand):
         db_table = model._meta.db_table
         was_translatable_before = self.was_translatable_before(field_name, db_table_fields)
         default_f = self.get_default_field(field_name, model)
-        default_f_required = default_f and self.get_field_required_in_db(db_table, default_f.name)
+        default_f_required = default_f and self.get_field_required_in_db(db_table,
+                                                    default_f.name,
+                                                    value_not_implemented=False)
         for lang in db_change_langs:
             new_field = get_real_fieldname(field_name, lang)
             try:
@@ -218,8 +223,10 @@ class Command(BaseCommand):
                                     (qn(db_table), alter_colum_set, \
                                     style.SQL_KEYWORD('NOT NULL')))
             elif default_f and not default_f.null:
-                f_required = self.get_field_required_in_db(db_table, field_column)
                 if lang == self.default_lang:
+                    f_required = self.get_field_required_in_db(db_table,
+                                                           field_column,
+                                                           value_not_implemented=False)
                     if default_f.name == new_field and default_f_required:
                         continue
                     if not f_required:
@@ -236,6 +243,9 @@ class Command(BaseCommand):
                                         (qn(db_table), alter_colum_set, \
                                         style.SQL_KEYWORD('NOT NULL')))
                 else:
+                    f_required = self.get_field_required_in_db(db_table,
+                                                           field_column,
+                                                           value_not_implemented=True)
                     if f_required:
                         sql_output.append(("ALTER TABLE %s %s %s" % 
                                         (qn(db_table), alter_colum_drop, not_null)))
