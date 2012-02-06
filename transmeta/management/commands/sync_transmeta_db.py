@@ -7,6 +7,7 @@
    2. When you new translatable fields to your models.
 
 """
+import re
 
 from optparse import make_option
 
@@ -22,37 +23,6 @@ from transmeta import (fallback_language, get_real_fieldname,
                        get_languages, get_all_translatable_fields)
 
 VALUE_DEFAULT = 'WITHOUT VALUE'
-
-def ask_for_default_language(assume_yes, language_code):
-    codes = [i[0] for i in get_languages()]
-    if language_code and language_code not in codes:
-        print 'Default language code provided "%s" is not deffined on settings.py' % language_code
-        language_code = None
-    if assume_yes and not language_code:
-        language_code = fallback_language()
-        if not language_code in codes:
-            language_code = codes[0]
-        print 'Default language code not provided. Using %s' % language_code
-    elif language_code:
-        print 'Default language code provided. Using %s' % language_code
-    if language_code:
-        return language_code
-    print 'Available languages:'
-    for i, lang_tuple in enumerate(get_languages()):
-        print '\t%d. %s' % (i+1, lang_tuple[1])
-    print 'Choose a default language. If you have without translate the project choose the current untranslated data'
-    while True:
-        prompt = "What's the default language of data? (1-%s) " % len(get_languages())
-        answer = raw_input(prompt).strip()
-        if answer != '':
-            try:
-                index = int(answer) - 1
-                if index < 0 or index > len(get_languages()):
-                    print "That's not a valid number"
-                else:
-                    return get_languages()[index][0]
-            except ValueError:
-                print "Please write a number"
 
 
 def ask_for_confirmation(sql_sentences, model_full_name, assume_yes):
@@ -103,7 +73,7 @@ class Command(BaseCommand):
         self.cursor = connection.cursor()
         self.introspection = connection.introspection
 
-        self.default_lang = ask_for_default_language(assume_yes, default_language)
+        self.default_lang = fallback_language()
 
         all_models = get_models()
         found_missing_fields = False
@@ -114,6 +84,7 @@ class Command(BaseCommand):
                 db_table = model._meta.db_table
                 for field_name in translatable_fields:
                     missing_langs = list(set(list(self.get_missing_languages(field_name, db_table)) + [self.default_lang]))
+                    print missing_langs
                     if missing_langs:
                         sql_sentences = self.get_sync_sql(field_name, missing_langs, model)
                         if sql_sentences:
@@ -162,6 +133,17 @@ class Command(BaseCommand):
         for lang_code, lang_name in get_languages():
             if get_real_fieldname(field_name, lang_code) not in db_table_fields:
                 yield lang_code
+        for db_table_field in db_table_fields:
+            pattern = re.compile('^%s_(?P<lang>\w{2})(:?\-(?P<country>\w{2}))?$' % field_name)
+            m = pattern.match(db_table_field)
+            if not m:
+                continue
+            print db_table_field 
+            lang = m.group('lang')
+            country = m.group('country')
+            if country:
+                lang += country
+            yield lang
 
     def was_translatable_before(self, field_name, db_table):
         """ check if field_name was translatable before syncing schema """
@@ -186,6 +168,16 @@ class Command(BaseCommand):
     def get_value_default(self):
         return getattr(settings, 'TRANSMETA_VALUE_DEFAULT', VALUE_DEFAULT)
 
+    def get_type_of_db_field(self, field_name, model):
+        field = self.get_default_field(field_name, model)
+        if not field:
+            field = model._meta.get_field(get_real_fieldname(field_name))
+        try:
+            col_type = field.db_type(connection)
+        except TypeError:  # old django
+            col_type = field.db_type()
+        return col_type
+
     def get_sync_sql(self, field_name, missing_langs, model):
         """ returns SQL needed for sync schema for a new translatable field """
         qn = connection.ops.quote_name
@@ -193,56 +185,65 @@ class Command(BaseCommand):
         sql_output = []
         db_table = model._meta.db_table
         was_translatable_before = self.was_translatable_before(field_name, db_table)
+        #import ipdb; ipdb.set_trace()
         default_f = self.get_default_field(field_name, model)
         for lang in missing_langs:
             new_field = get_real_fieldname(field_name, lang)
-            f = model._meta.get_field(new_field)
             try:
-                col_type = f.db_type(connection)
-            except TypeError:  # old django
-                col_type = f.db_type()
+                f = model._meta.get_field(new_field)
+                col_type = self.get_type_of_db_field(field_name, model)
+                field_column = f.column
+            except FieldDoesNotExist:
+                field_column = new_field
+                col_type = self.get_type_of_db_field(field_name, model)
             field_sql = [style.SQL_FIELD(qn(f.column)), style.SQL_COLTYPE(col_type)]
             # column creation
             if not new_field in self.get_table_fields(db_table):
                 sql_output.append("ALTER TABLE %s ADD COLUMN %s" % (qn(db_table), ' '.join(field_sql)))
 
-            alter_colum_set = 'ALTER COLUMN %s SET' % qn(f.column)
+            alter_colum_set = 'ALTER COLUMN %s SET' % qn(field_column)
             if default_f:
-                alter_colum_drop = 'ALTER COLUMN %s DROP' % qn(default_f.column)
+                alter_colum_drop = 'ALTER COLUMN %s DROP' % qn(field_column)
+            not_null = style.SQL_KEYWORD('NOT NULL')
+
             if 'mysql' in backend.__name__:
-                alter_colum_set = 'MODIFY %s %s' % (qn(f.column), col_type)
+                alter_colum_set = 'MODIFY %s %s' % (qn(field_column), col_type)
+                not_null = style.SQL_KEYWORD('NULL')
                 if default_f:
-                    alter_colum_drop = 'MODIFY %s %s' % (qn(default_f.column), col_type)
+                    alter_colum_drop = 'MODIFY %s %s' % (qn(field_column), col_type)
 
             if lang == self.default_lang and not was_translatable_before:
                 # data copy from old field (only for default language)
                 sql_output.append("UPDATE %s SET %s = %s" % (qn(db_table), \
-                                    qn(f.column), qn(field_name)))
+                                    qn(field_column), qn(field_name)))
                 if not f.null:
                     # changing to NOT NULL after having data copied
                     sql_output.append("ALTER TABLE %s %s %s" % \
                                     (qn(db_table), alter_colum_set, \
                                     style.SQL_KEYWORD('NOT NULL')))
-            elif default_f and not default_f.null and lang == self.default_lang:
-                if default_f.name == new_field and self.get_field_required_in_db(db_table, default_f.name):
-                    continue
-                # data copy from old field (only for default language)
-                sql_output.append(("UPDATE %(db_table)s SET %(f_colum)s = '%(value_default)s' "
-                                  "WHERE %(f_colum)s is %(null)s or %(f_colum)s = '' " %  
-                                    {'db_table': qn(db_table),
-                                     'f_colum': qn(f.column),
-                                     'value_default': qn(self.get_value_default()),
-                                     'null': style.SQL_KEYWORD('NULL'),
-                                    }))
-                not_null = style.SQL_KEYWORD('NOT NULL')
-                if 'mysql' in backend.__name__:
-                    not_null = style.SQL_KEYWORD('NULL')
-                sql_output.append(("ALTER TABLE %s %s %s" % 
-                                  (qn(db_table), alter_colum_drop, not_null)))
-                # changing to NOT NULL after having data copied
-                sql_output.append("ALTER TABLE %s %s %s" % \
-                                  (qn(db_table), alter_colum_set, \
-                                  style.SQL_KEYWORD('NOT NULL')))
+            elif default_f and not default_f.null:
+                default_f_required = self.get_field_required_in_db(db_table, default_f.name)
+                f_required = self.get_field_required_in_db(db_table, field_column)
+                if lang == self.default_lang:
+                    if default_f.name == new_field and default_f_required:
+                        continue
+                    # data copy from old field (only for default language)
+                    sql_output.append(("UPDATE %(db_table)s SET %(f_colum)s = '%(value_default)s' "
+                                    "WHERE %(f_colum)s is %(null)s or %(f_colum)s = '' " %  
+                                        {'db_table': qn(db_table),
+                                        'f_colum': qn(field_column),
+                                        'value_default': qn(self.get_value_default()),
+                                        'null': style.SQL_KEYWORD('NULL'),
+                                        }))
+                    if f_required:
+                        # changing to NOT NULL after having data copied
+                        sql_output.append("ALTER TABLE %s %s %s" % \
+                                        (qn(db_table), alter_colum_set, \
+                                        style.SQL_KEYWORD('NOT NULL')))
+                else:
+                    if f_required:
+                        sql_output.append(("ALTER TABLE %s %s %s" % 
+                                        (qn(db_table), alter_colum_drop, not_null)))
 
         if not was_translatable_before:
             # we drop field only if field was no translatable before
