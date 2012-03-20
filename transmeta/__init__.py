@@ -5,7 +5,7 @@ from django.db.models.fields import NOT_PROVIDED
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.datastructures import SortedDict
-from django.utils.translation import get_language
+from django.utils.translation import get_language, ugettext_lazy as _
 
 
 LANGUAGE_CODE = 0
@@ -143,7 +143,7 @@ class TransMeta(models.base.ModelBase):
                     if not lang_attr.blank:
                         lang_attr.blank = True
                 if hasattr(lang_attr, 'verbose_name'):
-                    lang_attr.verbose_name = LazyString(lang_attr.verbose_name, lang_name)
+                    lang_attr.verbose_name = LazyString(lang_attr.verbose_name, _(lang_name))
                 attrs[lang_attr_name] = lang_attr
             del attrs[field]
             attrs[field] = property(default_value(field))
