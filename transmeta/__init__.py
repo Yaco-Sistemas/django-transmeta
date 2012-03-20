@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.datastructures import SortedDict
 from django.utils.translation import get_language
-from django.utils.functional import lazy
+
 
 LANGUAGE_CODE = 0
 LANGUAGE_NAME = 1
@@ -18,7 +18,7 @@ def get_languages():
 
 def get_real_fieldname(field, lang=None):
     if lang is None:
-       lang = get_language().split('-')[0] # both 'en-US' and 'en' -> 'en'
+        lang = get_language().split('-')[0]  # both 'en-US' and 'en' -> 'en'
     return str('%s_%s' % (field, lang))
 
 
@@ -38,7 +38,7 @@ def get_real_fieldname_in_each_language(field):
 
 def canonical_fieldname(db_field):
     """ all "description_en", "description_fr", etc. field names will return "description" """
-    return getattr(db_field, 'original_fieldname', db_field.name) # original_fieldname is set by transmeta
+    return getattr(db_field, 'original_fieldname', db_field.name)  # original_fieldname is set by transmeta
 
 
 def fallback_language():
@@ -132,6 +132,7 @@ class TransMeta(models.base.ModelBase):
             original_attr = attrs[field]
             for lang in get_languages():
                 lang_code = lang[LANGUAGE_CODE]
+                lang_name = lang[LANGUAGE_NAME]
                 lang_attr = copy.copy(original_attr)
                 lang_attr.original_fieldname = field
                 lang_attr_name = get_real_fieldname(field, lang_code)
@@ -142,7 +143,7 @@ class TransMeta(models.base.ModelBase):
                     if not lang_attr.blank:
                         lang_attr.blank = True
                 if hasattr(lang_attr, 'verbose_name'):
-                    lang_attr.verbose_name = LazyString(lang_attr.verbose_name, lang_code)
+                    lang_attr.verbose_name = LazyString(lang_attr.verbose_name, lang_name)
                 attrs[lang_attr_name] = lang_attr
             del attrs[field]
             attrs[field] = property(default_value(field))
@@ -160,5 +161,4 @@ class LazyString(object):
         self.lang = lang
 
     def __unicode__(self):
-        return u'%s %s' % (self.proxy, self.lang)
-
+        return u'%s (%s)' % (self.proxy, self.lang)
