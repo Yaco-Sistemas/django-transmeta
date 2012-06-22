@@ -196,7 +196,7 @@ class Command(BaseCommand):
             except FieldDoesNotExist:  # columns in db, removed the settings.LANGUGES
                 field_column = new_field
                 col_type = self.get_type_of_db_field(field_name, model)
-            field_sql = [style.SQL_FIELD(qn(f.column)), style.SQL_COLTYPE(col_type)]
+            field_sql = [style.SQL_FIELD(qn(field_column)), style.SQL_COLTYPE(col_type)]
 
             alter_colum_set = 'ALTER COLUMN %s SET' % qn(field_column)
             if default_f:
