@@ -1,3 +1,8 @@
+0.6.8 (2012-06-22)
+------------------
+
+- Fix a little bug in the command sync_transmeta_db (UnboundLocalError: local variable 'f' referenced before assignment)
+
 0.6.7 (2012-03-20)
 ------------------
 
