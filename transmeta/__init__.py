@@ -24,7 +24,7 @@ def get_real_fieldname(field, lang=None):
 
 def get_field_language(real_field):
     """ return language for a field. i.e. returns "en" for "name_en" """
-    return real_field.split('_')[1]
+    return real_field.split('_')[-1]
 
 
 def get_fallback_fieldname(field, lang=None):
