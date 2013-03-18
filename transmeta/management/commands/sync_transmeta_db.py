@@ -19,7 +19,7 @@ from django.db import backend
 from django.db.models import get_models
 from django.db.models.fields import FieldDoesNotExist
 
-from transmeta import (fallback_language, get_real_fieldname,
+from transmeta import (mandatory_language, get_real_fieldname,
                        get_languages, get_all_translatable_fields)
 
 VALUE_DEFAULT = 'WITHOUT VALUE'
@@ -73,7 +73,7 @@ class Command(BaseCommand):
         self.cursor = connection.cursor()
         self.introspection = connection.introspection
 
-        self.default_lang = default_language or fallback_language()
+        self.default_lang = default_language or mandatory_language()
 
         all_models = get_models()
         found_db_change_fields = False

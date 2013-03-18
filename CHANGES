@@ -1,3 +1,9 @@
+0.6.10 (2013-03-18)
+-------------------
+
+- New TRANSMETA_MANDATORY_LANGUAGE setting, to control which field
+will be NOT NULL in the models.
+
 0.6.9 (2012-10-24)
 ------------------
 

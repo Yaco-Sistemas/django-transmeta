@@ -41,9 +41,14 @@ def canonical_fieldname(db_field):
     return getattr(db_field, 'original_fieldname', db_field.name)  # original_fieldname is set by transmeta
 
 
+def mandatory_language():
+    """ returns mandatory language. the language which is required to fill """
+    return getattr(settings, 'TRANSMETA_MANDATORY_LANGUAGE', fallback_language())
+
+
 def fallback_language():
     """ returns fallback language """
-    return getattr(settings, 'TRANSMETA_DEFAULT_LANGUAGE', \
+    return getattr(settings, 'TRANSMETA_DEFAULT_LANGUAGE',
                    settings.LANGUAGE_CODE)
 
 
@@ -74,7 +79,10 @@ def default_value(field):
             result = getattr(self, attname(get_language()[:2]))
         else:
             default_language = fallback_language()
-            result = getattr(self, attname(default_language), None)
+            if getattr(self, attname(default_language), None):
+                result = getattr(self, attname(default_language), None)
+            else:
+                result = getattr(self, attname(settings.LANGUAGE_CODE), None)
         return result
 
     return default_value_func
@@ -120,8 +128,6 @@ class TransMeta(models.base.ModelBase):
         if not isinstance(fields, tuple):
             raise ImproperlyConfigured("Meta's translate attribute must be a tuple")
 
-        default_language = fallback_language()
-
         for field in fields:
             if not field in attrs or \
                not isinstance(attrs[field], models.fields.Field):
@@ -136,8 +142,8 @@ class TransMeta(models.base.ModelBase):
                 lang_attr = copy.copy(original_attr)
                 lang_attr.original_fieldname = field
                 lang_attr_name = get_real_fieldname(field, lang_code)
-                if lang_code != default_language:
-                    # only will be required for default language
+                if lang_code != mandatory_language():
+                    # only will be required for mandatory language
                     if not lang_attr.null and lang_attr.default is NOT_PROVIDED:
                         lang_attr.null = True
                     if not lang_attr.blank:
