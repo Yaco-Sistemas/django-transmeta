@@ -1,6 +1,12 @@
 Introduction
 ============
 
+.. image:: https://badge.fury.io/py/django-transmeta.png
+    :target: https://badge.fury.io/py/django-transmeta
+
+.. image:: https://pypip.in/d/django-transmeta/badge.png
+    :target: https://pypi.python.org/pypi/django-transmeta
+
 Transmeta is an application for translatable content in Django's models. Each
 language is stored and managed automatically in a different column at database
 level.
