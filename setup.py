@@ -47,6 +47,8 @@ setup(
         'Development Status :: 4 - Beta',
         'Framework :: Django',
         'License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
     ],
     license="LGPL 3",
     keywords="django,translation,internationalization,i18n,transmeta,models,translation models",
