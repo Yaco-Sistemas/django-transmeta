@@ -26,11 +26,11 @@ VALUE_DEFAULT = 'WITHOUT VALUE'
 
 
 def ask_for_confirmation(sql_sentences, model_full_name, assume_yes):
-    print '\nSQL to synchronize "%s" schema:' % model_full_name
+    print ('\nSQL to synchronize "%s" schema:' % model_full_name)
     for sentence in sql_sentences:
-        print '   %s' % sentence
+        print ('   %s' % sentence)
     if assume_yes:
-        print '\nAre you sure that you want to execute the previous SQL: (y/n) [n]: YES'
+        print ('\nAre you sure that you want to execute the previous SQL: (y/n) [n]: YES')
         return True
     while True:
         prompt = '\nAre you sure that you want to execute the previous SQL: (y/n) [n]: '
@@ -38,7 +38,7 @@ def ask_for_confirmation(sql_sentences, model_full_name, assume_yes):
         if answer == '':
             return False
         elif answer not in ('y', 'n', 'yes', 'no'):
-            print 'Please answer yes or no'
+            print ('Please answer yes or no')
         elif answer == 'y' or answer == 'yes':
             return True
         else:
@@ -46,8 +46,8 @@ def ask_for_confirmation(sql_sentences, model_full_name, assume_yes):
 
 
 def print_db_change_langs(db_change_langs, field_name, model_name):
-    print '\nThis languages can change in "%s" field from "%s" model: %s' % \
-        (field_name, model_name, ", ".join(db_change_langs))
+    print ('\nThis languages can change in "%s" field from "%s" model: %s' % \
+        (field_name, model_name, ", ".join(db_change_langs)))
 
 
 class Command(BaseCommand):
@@ -92,29 +92,29 @@ class Command(BaseCommand):
                             print_db_change_langs(db_change_langs, field_name, model_full_name)
                             execute_sql = ask_for_confirmation(sql_sentences, model_full_name, assume_yes)
                             if execute_sql:
-                                print 'Executing SQL...',
+                                print ('Executing SQL...')
                                 for sentence in sql_sentences:
                                     self.cursor.execute(sentence)
                                     # commit
                                     transaction.commit()
-                                print 'Done'
+                                print ('Done')
                             else:
-                                print 'SQL not executed'
+                                print ('SQL not executed')
 
         if transaction.is_dirty():
             transaction.commit()
         transaction.leave_transaction_management()
 
         if not found_db_change_fields:
-            print '\nNo new translatable fields detected'
+            print ('\nNo new translatable fields detected')
         if default_language:
             variable = 'TRANSMETA_DEFAULT_LANGUAGE'
             has_transmeta_default_language = getattr(settings, variable, False)
             if not has_transmeta_default_language:
                 variable = 'LANGUAGE_CODE'
             if getattr(settings, variable) != default_language:
-                print ('\n\nYou should change in your settings '
-                       'the %s variable to "%s"' % (variable, default_language))
+                print (('\n\nYou should change in your settings '
+                       'the %s variable to "%s"' % (variable, default_language)))
 
     def get_table_fields(self, db_table):
         """ get table fields from schema """
