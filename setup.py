@@ -33,12 +33,12 @@ long_description = (
     + '\n' +
     read('CHANGES.rst')
     + '\n' +
-   'Download\n'
+    'Download\n'
     '********\n')
 
 setup(
     name="django-transmeta",
-    version="0.7.2",
+    version="0.7.3",
     author="Yaco Sistemas S.L.",
     author_email="garcia.marc@gmail.com",
     description="Transmeta is an application for translatable content in Django's models.",
@@ -52,8 +52,8 @@ setup(
     ],
     license="LGPL 3",
     keywords="django,translation,internationalization,i18n,transmeta,models,translation models",
-    url='http://code.google.com/p/django-transmeta/',
+    url='https://github.com/Yaco-Sistemas/django-transmeta',
     packages=find_packages('.'),
-    package_dir= {'': '.'},
+    package_dir={'': '.'},
     zip_safe=False,
 )
