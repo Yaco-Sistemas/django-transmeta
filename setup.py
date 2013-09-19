@@ -21,24 +21,24 @@ def read(*rnames):
     return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
 
 long_description = (
-    read('README')
+    read('README.rst')
     + '\n' +
     'Authors\n'
     '************\n'
     + '\n' +
-    read('AUTHORS')
+    read('AUTHORS.rst')
     + '\n' +
     'Change history\n'
     '**************\n'
     + '\n' +
-    read('CHANGES')
+    read('CHANGES.rst')
     + '\n' +
    'Download\n'
     '********\n')
 
 setup(
     name="django-transmeta",
-    version="0.7.1",
+    version="0.7.2",
     author="Yaco Sistemas S.L.",
     author_email="garcia.marc@gmail.com",
     description="Transmeta is an application for translatable content in Django's models.",

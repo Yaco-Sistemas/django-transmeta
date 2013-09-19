@@ -1,4 +1,4 @@
-include README
-include AUTHORS
-include CHANGES
+include README.rst
+include AUTHORS.rst
+include CHANGES.rst
 include LICENSE
