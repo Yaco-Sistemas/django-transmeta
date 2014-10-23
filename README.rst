@@ -84,7 +84,7 @@ Notes:
     TRANSMETA_LANGUAGES = (
         ('es', ugettext('Spanish')),
         ('en', ugettext('English')),
-        ('en', ugettext('Italian')),
+        ('it', ugettext('Italian')),
     )
 
 This is the SQL generated with the ``./manage.py sqlall`` command::
