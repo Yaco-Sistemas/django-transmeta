@@ -1,8 +1,10 @@
+from __future__ import unicode_literals
 import copy
 
 from django.db import models
 from django.db.models.fields import NOT_PROVIDED
 from django.conf import settings
+from django.utils.encoding import python_2_unicode_compatible
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.datastructures import SortedDict
 from django.utils.translation import get_language, ugettext_lazy as _
@@ -164,11 +166,12 @@ class TransMeta(models.base.ModelBase):
         return new_class
 
 
+@python_2_unicode_compatible
 class LazyString(object):
 
     def __init__(self, proxy, lang):
         self.proxy = proxy
         self.lang = lang
 
-    def __unicode__(self):
-        return u'%s (%s)' % (self.proxy, self.lang)
+    def __str__(self):
+        return '%s (%s)' % (self.proxy, self.lang)
