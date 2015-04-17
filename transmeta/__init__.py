@@ -17,8 +17,10 @@ def get_languages():
 
 
 def get_real_fieldname(field, lang=None):
+    """ append lang to base field name. Use active or fallback language if lang is None """
     if lang is None:
-        lang = get_language().split('-')[0]  # both 'en-US' and 'en' -> 'en'
+        lang = get_language() or fallback_language()
+        lang = lang.split('-')[0] # both 'en-US' and 'en' -> 'en'
     return str('%s_%s' % (field, lang))
 
 
