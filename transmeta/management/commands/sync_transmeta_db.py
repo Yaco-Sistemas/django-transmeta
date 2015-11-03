@@ -8,6 +8,7 @@
 
 """
 import re
+import sys
 
 from optparse import make_option
 
@@ -22,6 +23,10 @@ from django.db.models.fields import FieldDoesNotExist
 from transmeta import (mandatory_language, get_real_fieldname,
                        get_languages, get_all_translatable_fields)
 
+if sys.version_info.major == 2:
+    input = raw_input
+
+
 VALUE_DEFAULT = 'WITHOUT VALUE'
 
 
@@ -34,7 +39,7 @@ def ask_for_confirmation(sql_sentences, model_full_name, assume_yes):
         return True
     while True:
         prompt = '\nAre you sure that you want to execute the previous SQL: (y/n) [n]: '
-        answer = raw_input(prompt).strip()
+        answer = input(prompt).strip()
         if answer == '':
             return False
         elif answer not in ('y', 'n', 'yes', 'no'):
@@ -232,7 +237,7 @@ class Command(BaseCommand):
                     if not f_required:
                         # data copy from old field (only for default language)
                         sql_output.append(("UPDATE %(db_table)s SET %(f_colum)s = '%(value_default)s' "
-                                    "WHERE %(f_colum)s is %(null)s or %(f_colum)s = '' " %  
+                                    "WHERE %(f_colum)s is %(null)s or %(f_colum)s = '' " %
                                         {'db_table': qn(db_table),
                                         'f_colum': qn(field_column),
                                         'value_default': self.get_value_default(),
@@ -247,7 +252,7 @@ class Command(BaseCommand):
                                                            field_column,
                                                            value_not_implemented=True)
                     if f_required:
-                        sql_output.append(("ALTER TABLE %s %s %s" % 
+                        sql_output.append(("ALTER TABLE %s %s %s" %
                                         (qn(db_table), alter_colum_drop, not_null)))
 
         if not was_translatable_before:
