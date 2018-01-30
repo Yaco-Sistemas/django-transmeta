@@ -1,3 +1,8 @@
+0.7.4 (2018-01-30)
+-------------------
+
+- Fix bug in sync_transmeta_db command if translated columns exist of unconfigured languages.
+
 0.7.3 (2013-09-02)
 -------------------
 
@@ -42,7 +47,7 @@
 0.6.7 (2012-03-20)
 ------------------
 
-- Change the representation (verbose_name) of the transmeta labels 
+- Change the representation (verbose_name) of the transmeta labels
 
 
 0.6.6 (2012-02-06)
