@@ -1,7 +1,7 @@
 0.7.4 (2018-01-30)
 -------------------
 
-- Fix bug in sync_transmeta_db command if translated columns exist of unconfigured languages.
+- Fix bug in sync_transmeta_db command if translated columns of unconfigured languages exist already.
 
 0.7.3 (2013-09-02)
 -------------------
