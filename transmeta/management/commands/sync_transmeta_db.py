@@ -87,8 +87,8 @@ class Command(BaseCommand):
                 model_full_name = '%s.%s' % (model._meta.app_label, model._meta.module_name)
                 translatable_fields = get_all_translatable_fields(model, column_in_current_table=True)
                 db_table = model._meta.db_table
+                db_table_fields = self.get_table_fields(db_table)
                 for field_name in translatable_fields:
-                    db_table_fields = self.get_table_fields(db_table)
                     db_change_langs = list(set(list(self.get_db_change_languages(field_name, db_table_fields)) + [self.default_lang]))
                     if db_change_langs:
                         sql_sentences = self.get_sync_sql(field_name, db_change_langs, model, db_table_fields)
