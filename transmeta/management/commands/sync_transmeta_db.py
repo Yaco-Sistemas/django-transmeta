@@ -228,7 +228,7 @@ class Command(BaseCommand):
 
             # column creation
             if new_field not in db_table_fields:
-                sql_output.append("ALTER TABLE %s ADD COLUMN %s" % (qn(db_table), ' '.join(field_sql)))
+                sql_output.append("ALTER TABLE %s ADD %s" % (qn(db_table), ' '.join(field_sql)))
 
             if lang == self.default_lang and not was_translatable_before:
                 # data copy from old field (only for default language)
