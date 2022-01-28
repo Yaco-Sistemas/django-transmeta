@@ -4,8 +4,11 @@ from django.db import models
 from django.db.models.fields import NOT_PROVIDED
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.utils.datastructures import SortedDict
-from django.utils.translation import get_language, ugettext_lazy as _
+try :
+    from django.utils.datastructures import SortedDict
+except ImportError:
+    from collections import OrderedDict as SortedDict
+from django.utils.translation import get_language, gettext_lazy as _
 
 
 LANGUAGE_CODE = 0
@@ -172,3 +175,6 @@ class LazyString(object):
 
     def __unicode__(self):
         return u'%s (%s)' % (self.proxy, self.lang)
+    
+    def __str__(self):
+        return '%s (%s)' % (self.proxy, self.lang)
